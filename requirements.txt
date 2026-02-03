@@ -1,0 +1,15 @@
+# Flask Auction Platform - Dependencies
+# =====================================
+# Install with: pip install -r requirements.txt
+
+# Core Flask framework
+Flask==3.0.0
+
+# SQLAlchemy ORM integration for Flask
+Flask-SQLAlchemy==3.1.1
+
+# SQLAlchemy (database ORM)
+SQLAlchemy==2.0.23
+
+# Werkzeug (WSGI utilities, includes password hashing)
+Werkzeug==3.0.1

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Online Auction Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Hero Section -->
+        <div class="bg-white rounded-3 p-5 mb-4 shadow-sm">
+            <h1 class="display-5 fw-bold">
+                <i class="bi bi-hammer text-primary"></i> Welcome to AuctionHub
+            </h1>
+            <p class="lead text-muted">
+                Discover unique items and place your bids in real-time. 
+                Our platform ensures secure sessions and data integrity for every transaction.
+            </p>
+            {% if not current_user %}
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-person-plus"></i> Get Started
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+            </div>
+            {% else %}
+            <a href="{{ url_for('create_item') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle"></i> Create New Auction
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Active Auctions Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-fire text-danger"></i> Active Auctions</h2>
+            <span class="badge bg-success">{{ active_items|length }} Live</span>
+        </div>
+    </div>
+</div>
+
+{% if active_items %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+    {% for item in active_items %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="badge bg-success">
+                    <i class="bi bi-broadcast"></i> Live
+                </span>
+                <small class="text-muted">
+                    by {{ item.seller.username }}
+                </small>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ item.name }}</h5>
+                <p class="card-text text-muted">
+                    {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+                </p>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <small class="text-muted">Current Bid</small>
+                        <div class="bid-amount">${{ "%.2f"|format(item.current_bid) }}</div>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Time Left</small>
+                        <div class="time-remaining">{{ item.time_remaining }}</div>
+                    </div>
+                </div>
+                
+                {% if item.current_bidder %}
+                <p class="small text-muted mb-3">
+                    <i class="bi bi-person"></i> Leading: {{ item.current_bidder.username }}
+                </p>
+                {% else %}
+                <p class="small text-muted mb-3">
+                    <i class="bi bi-info-circle"></i> No bids yet - be the first!
+                </p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{{ url_for('view_item', item_id=item.id) }}" class="btn btn-primary w-100">
+                    <i class="bi bi-eye"></i> View &amp; Bid
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info mb-5">
+    <i class="bi bi-info-circle"></i> No active auctions at the moment. 
+    {% if current_user %}
+    <a href="{{ url_for('create_item') }}">Create one now!</a>
+    {% else %}
+    <a href="{{ url_for('register') }}">Register</a> to create your first auction!
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Recently Completed Section -->
+{% if completed_items %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-trophy text-warning"></i> Recently Completed</h2>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for item in completed_items %}
+    <div class="col">
+        <div class="card h-100 border-secondary">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-check-circle"></i> Ended
+                </span>
+                <small>
+                    Won by {{ item.winner.username if item.winner else 'N/A' }}
+                </small>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ item.name }}</h5>
+                <p class="card-text text-muted">
+                    {{ item.description[:80] }}{% if item.description|length > 80 %}...{% endif %}
+                </p>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Final Price</small>
+                        <div class="bid-amount text-secondary">${{ "%.2f"|format(item.current_bid) }}</div>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Total Bids</small>
+                        <div class="fw-bold">{{ item.bids|length }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{{ url_for('view_item', item_id=item.id) }}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-eye"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Features Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Platform Features</h2>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-4">
+            <div class="card-body">
+                <i class="bi bi-shield-check display-4 text-success mb-3"></i>
+                <h5>Secure Sessions</h5>
+                <p class="text-muted">
+                    30-minute session timeout protects your account. 
+                    Passwords are securely hashed.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-4">
+            <div class="card-body">
+                <i class="bi bi-lightning display-4 text-primary mb-3"></i>
+                <h5>Real-Time Bidding</h5>
+                <p class="text-muted">
+                    Place bids instantly with validation ensuring 
+                    data integrity on every transaction.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-4">
+            <div class="card-body">
+                <i class="bi bi-trophy display-4 text-warning mb-3"></i>
+                <h5>Automatic Winner Selection</h5>
+                <p class="text-muted">
+                    Winners are automatically determined when 
+                    auctions end. Fair and transparent.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

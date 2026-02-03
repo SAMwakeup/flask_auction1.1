@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}My Auctions - Online Auction Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>
+            <i class="bi bi-grid"></i> My Auctions Dashboard
+        </h1>
+        <p class="text-muted">
+            Manage your listings, track your bids, and view your won items.
+        </p>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="listings-tab" data-bs-toggle="tab" 
+                data-bs-target="#listings" type="button" role="tab">
+            <i class="bi bi-tag"></i> My Listings 
+            <span class="badge bg-primary">{{ my_items|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="bids-tab" data-bs-toggle="tab" 
+                data-bs-target="#bids" type="button" role="tab">
+            <i class="bi bi-hammer"></i> My Bids 
+            <span class="badge bg-secondary">{{ my_bids|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="won-tab" data-bs-toggle="tab" 
+                data-bs-target="#won" type="button" role="tab">
+            <i class="bi bi-trophy"></i> Won Items 
+            <span class="badge bg-success">{{ won_items|length }}</span>
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="dashboardTabsContent">
+    
+    <!-- My Listings Tab -->
+    <div class="tab-pane fade show active" id="listings" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Items You're Selling</h4>
+            <a href="{{ url_for('create_item') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create New
+            </a>
+        </div>
+        
+        {% if my_items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item</th>
+                        <th>Current Bid</th>
+                        <th>Bids</th>
+                        <th>Status</th>
+                        <th>Ends</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in my_items %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.name }}</strong>
+                            <br>
+                            <small class="text-muted">ID: #{{ item.id }}</small>
+                        </td>
+                        <td class="fw-bold text-primary">${{ "%.2f"|format(item.current_bid) }}</td>
+                        <td>{{ item.bids|length }}</td>
+                        <td>
+                            {% if item.winner %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check"></i> Sold
+                            </span>
+                            {% elif item.is_active %}
+                            <span class="badge bg-primary">
+                                <i class="bi bi-broadcast"></i> Active
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-clock"></i> Ended
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.is_active %}
+                            <span class="time-remaining">{{ item.time_remaining }}</span>
+                            {% else %}
+                            {{ item.end_time.strftime('%Y-%m-%d') }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('view_item', item_id=item.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <p class="mb-3">You haven't listed any items yet.</p>
+            <a href="{{ url_for('create_item') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Your First Auction
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- My Bids Tab -->
+    <div class="tab-pane fade" id="bids" role="tabpanel">
+        <h4 class="mb-3">Items You're Bidding On</h4>
+        
+        {% if my_bids %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for item in my_bids %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        {% if item.is_active %}
+                        <span class="badge bg-primary">Active</span>
+                        {% elif item.winner and item.winner.id == current_user.id %}
+                        <span class="badge bg-success">You Won!</span>
+                        {% elif item.winner %}
+                        <span class="badge bg-danger">Outbid</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Ended</span>
+                        {% endif %}
+                        
+                        {% if item.current_bidder and item.current_bidder.id == current_user.id %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-arrow-up"></i> Leading
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.name }}</h5>
+                        <p class="card-text text-muted">
+                            {{ item.description[:80] }}{% if item.description|length > 80 %}...{% endif %}
+                        </p>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <small class="text-muted">Current Bid</small>
+                                <div class="bid-amount">${{ "%.2f"|format(item.current_bid) }}</div>
+                            </div>
+                            {% if item.is_active %}
+                            <div class="text-end">
+                                <small class="text-muted">Time Left</small>
+                                <div class="time-remaining">{{ item.time_remaining }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('view_item', item_id=item.id) }}" 
+                           class="btn btn-primary w-100">
+                            <i class="bi bi-eye"></i> View &amp; {% if item.is_active %}Bid{% else %}Details{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-hammer fs-1 d-block mb-3"></i>
+            <p class="mb-3">You haven't placed any bids yet.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="bi bi-search"></i> Browse Auctions
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Won Items Tab -->
+    <div class="tab-pane fade" id="won" role="tabpanel">
+        <h4 class="mb-3">Items You've Won</h4>
+        
+        {% if won_items %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for item in won_items %}
+            <div class="col">
+                <div class="card h-100 border-success">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-trophy"></i> Won!
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.name }}</h5>
+                        <p class="card-text text-muted">
+                            {{ item.description[:80] }}{% if item.description|length > 80 %}...{% endif %}
+                        </p>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <small class="text-muted">Winning Bid</small>
+                                <div class="bid-amount text-success">${{ "%.2f"|format(item.current_bid) }}</div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">Seller</small>
+                                <div class="fw-bold">{{ item.seller.username }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('view_item', item_id=item.id) }}" 
+                           class="btn btn-outline-success w-100">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-trophy fs-1 d-block mb-3"></i>
+            <p class="mb-3">You haven't won any auctions yet. Keep bidding!</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="bi bi-search"></i> Browse Auctions
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
